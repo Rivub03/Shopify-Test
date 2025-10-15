@@ -25,6 +25,35 @@
     {%- endif -%}
     {%- content_for 'block', id: 'blog-post-content', type: '_blog-post-content' %}
 
+<!-- Custom Multimedia Layers -->
+<div class="article-media">
+  {% if article.metafields.media.image %}
+    <img
+      src="{{ article.metafields.media.image | img_url: 'master' }}"
+      alt="{{ article.title }}"
+      class="article-image"
+    >
+  {% endif %}
+
+  {% if article.metafields.media.audio %}
+    <audio controls class="article-audio">
+      <source src="{{ article.metafields.media.audio }}" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+  {% endif %}
+
+  {% if article.metafields.media.video %}
+    <div class="article-video">
+      <iframe
+        src="{{ article.metafields.media.video }}"
+        frameborder="0"
+        allowfullscreen
+      ></iframe>
+    </div>
+  {% endif %}
+</div>
+<!-- Custom Multimedia Layers End -->
+    
     {% if blog.comments_enabled? %}
       <div class="blog-post-comments-container">
         <h2 class="h3">{{- 'blogs.article.comments_heading' | t: count: article.comments_count -}}</h2>
