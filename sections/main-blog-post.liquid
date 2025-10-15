@@ -43,32 +43,33 @@
   {% if media_audios %}
     {% for audio in media_audios %}
       <audio controls preload="none" class="article-audio">
-        <source src="{{ audio | file_url }}" type="{{ audio.mime_type }}">
+        <source src="{{ audio.sources[0].url }}" type="{{ audio.mime_type }}">
         Your browser does not support the audio element.
       </audio>
     {% endfor %}
   {% endif %}
 
   {% assign media_videos = article.metafields.custom.media_video.value %}
+  {% if media_videos %}
     {% for video in media_videos %}
-    {% if video.media_type == "video" %}
-      <!-- For uploaded Shopify-hosted videos -->
       <video controls preload="metadata" class="article-video">
-        <source src="{{ video | file_url }}" type="{{ video.mime_type }}">
+        <source src="{{ video.sources[0].url }}" type="{{ video.mime_type }}">
         Your browser does not support the video tag.
       </video>
-    {% endif %}
-  {% endfor %}
+    {% endfor %}
+  {% endif %}
+
   {% assign media_video_links = article.metafields.custom.media_video_link.value %}
   {% if media_video_links %}
-    <!-- For YouTube/Vimeo links (text or URL metafields) -->
-        <div class="article-video">
-          <iframe
-            src="{{ video | escape }}"
-            frameborder="0"
-            allowfullscreen
-          ></iframe>
-        </div>
+    {% for link in media_video_links %}
+      <div class="article-video">
+        <iframe
+          src="{{ link | escape }}"
+          frameborder="0"
+          allowfullscreen
+        ></iframe>
+      </div>
+    {% endfor %}
   {% endif %}
 </div>
 <!-- Custom Multimedia Layers End -->
@@ -76,15 +77,25 @@
 <div style="border:2px dashed #06f; padding:12px; margin:1.5rem 0; background:#f0f8ff;">
   <strong>DEBUG: Multimedia Metafield Values</strong><br>
 
-  <p><b>Audio metafield raw:</b><br>
-  {{ article.metafields.custom.media_audio | json }}</p>
+  <p><b>Audio metafield (raw):</b><br>
+  {{ article.metafields.custom.media_audio | default: "⚠️ No metafield found" }}</p>
 
-  <p><b>Video metafield raw:</b><br>
-  {{ article.metafields.custom.media_video | json }}</p>
+  <p><b>Audio metafield (.value):</b><br>
+  {{ article.metafields.custom.media_audio.value | default: "⚠️ No .value" }}</p>
 
-  <p><b>Video link metafield raw:</b><br>
-  {{ article.metafields.custom.media_video_link | json }}</p>
+  <p><b>Video metafield (raw):</b><br>
+  {{ article.metafields.custom.media_video | default: "⚠️ No metafield found" }}</p>
+
+  <p><b>Video metafield (.value):</b><br>
+  {{ article.metafields.custom.media_video.value | default: "⚠️ No .value" }}</p>
+
+  <p><b>Video link metafield (raw):</b><br>
+  {{ article.metafields.custom.media_video_link | default: "⚠️ No metafield found" }}</p>
+
+  <p><b>Video link metafield (.value):</b><br>
+  {{ article.metafields.custom.media_video_link.value | default: "⚠️ No .value" }}</p>
 </div>
+
 <!--Debugging End-->
     
     {% if blog.comments_enabled? %}
