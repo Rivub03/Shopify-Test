@@ -29,15 +29,18 @@
 <div class="article-media">
   {% if article.metafields.custom.media_image %}
     <img
-      src="{{ article.metafields.custom.media_image | image_url: 'master' }}" width="500" height="600"
+      src="{{ article.metafields.custom.media_image | file_url }}"
       alt="{{ article.title }}"
+      width="500"
+      height="600"
       class="article-image"
+      alt = "{{ article.title }}"
     >
   {% endif %}
 
   {% if article.metafields.custom.media_audio %}
     <audio controls class="article-audio">
-      <source src="{{ article.metafields.custom.media_audio }}" type="audio/mpeg">
+      <source src="{{ article.metafields.custom.media_audio | file_url }}" type="audio/mpeg">
       Your browser does not support the audio element.
     </audio>
   {% endif %}
