@@ -29,7 +29,7 @@
 <div class="article-media">
   {% if article.metafields.media.image %}
     <img
-      src="{{ article.metafields.media.image | img_url: 'master' }}"
+      src="{{ article.metafields.media.image | img_url: 'master' }}" width="500" height="600"
       alt="{{ article.title }}"
       class="article-image"
     >
