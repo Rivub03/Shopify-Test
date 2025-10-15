@@ -27,33 +27,48 @@
 
 <!-- Custom Multimedia Layers -->
 <div class="article-media">
-{% assign media_images = article.metafields.custom.media_image.value %}
-{% if media_images %}
-  {% for media in media_images %}
-    <img
-      src="{{ media | image_url: width: 1200 }}"
-      alt="{{ article.title }}"
-      class="article-image"
-      loading="lazy"
-    >
-  {% endfor %}
-{% endif %}
-
-  {% if article.metafields.custom.media_audio %}
-    <audio controls class="article-audio">
-      <source src="{{ article.metafields.custom.media_audio | file_url }}" type="audio/mpeg">
-      Your browser does not support the audio element.
-    </audio>
+  {% assign media_images = article.metafields.custom.media_image.value %}
+  {% if media_images %}
+    {% for media in media_images %}
+      <img
+        src="{{ media | image_url: width: 100 }}"
+        alt="{{ article.title }}"
+        class="article-image"
+        loading="lazy"
+      >
+    {% endfor %}
   {% endif %}
 
-  {% if article.metafields.custom.media_video %}
-    <div class="article-video">
-      <iframe
-        src="{{ article.metafields.custom.media_video }}"
-        frameborder="0"
-        allowfullscreen
-      ></iframe>
-    </div>
+  {% assign media_audios = article.metafields.custom.media_audio.value %}
+  {% if media_audios %}
+    {% for audio in media_audios %}
+      <audio controls preload="none" class="article-audio">
+        <source src="{{ audio | file_url }}" type="{{ audio.mime_type }}">
+        Your browser does not support the audio element.
+      </audio>
+    {% endfor %}
+  {% endif %}
+
+  {% assign media_videos = article.metafields.custom.media_video.value %}
+    {% for video in media_videos %}
+    {% if video.media_type == "video" %}
+      <!-- For uploaded Shopify-hosted videos -->
+      <video controls preload="metadata" class="article-video">
+        <source src="{{ video | file_url }}" type="{{ video.mime_type }}">
+        Your browser does not support the video tag.
+      </video>
+    {% endif %}
+  {% endfor %}
+  {% assign media_video_links = article.metafields.custom.media_video_link.value %}
+  {% if media_video_links %}
+    <!-- For YouTube/Vimeo links (text or URL metafields) -->
+        <div class="article-video">
+          <iframe
+            src="{{ video | escape }}"
+            frameborder="0"
+            allowfullscreen
+          ></iframe>
+        </div>
   {% endif %}
 </div>
 <!-- Custom Multimedia Layers End -->
