@@ -58,55 +58,70 @@
   }
 </style>
 
-<div class="article-media">
+{%- comment -%}
+====================================================
+BIDESH I INLINE MEDIA EMBEDDING SYSTEM
+Authors can embed uploaded media inline in article text
+using tokens like [media:0], [media:1], etc.
+====================================================
+{%- endcomment -%}
 
-  <!-- Images -->
-  {% assign media_images = article.metafields.custom.media_image.value %}
-  {% if media_images %}
-    {% for image in media_images %}
-      <figure>
-        <img
-          src="{{ image | image_url: width: 1200 }}"
-          alt="{{ article.title }}"
-          loading="lazy"
-        >
+{%- comment -%} Initialize an empty array {%- endcomment -%}
+{% assign media_snippets = '' | split: '__EMPTY__' %}
+
+{%- comment -%} 1. IMAGES {%- endcomment -%}
+{% assign media_images = article.metafields.custom.media_image.value %}
+{% if media_images %}
+  {% for img in media_images %}
+    {% capture html %}
+      <figure class="article-inline-media article-inline-media--image">
+        <img src="{{ img | image_url: width: 1200 }}" alt="{{ article.title }}" loading="lazy">
       </figure>
-    {% endfor %}
-  {% endif %}
+    {% endcapture %}
+    {% assign media_snippets = media_snippets | push: html %}
+  {% endfor %}
+{% endif %}
 
-  <!-- Audio -->
-  {% assign media_audios = article.metafields.custom.media_audio.value %}
-  {% if media_audios %}
-    {% for audio in media_audios %}
-      <figure>
+{%- comment -%} 2. AUDIO {%- endcomment -%}
+{% assign media_audios = article.metafields.custom.media_audio.value %}
+{% if media_audios %}
+  {% for audio in media_audios %}
+    {% capture html %}
+      <figure class="article-inline-media article-inline-media--audio">
         <audio controls preload="none">
-          <source src="{{ audio.url }}" type="{{ audio.mime_type | default: 'audio/mpeg' }}">
+          <source src="{{ audio.url | default: audio | file_url }}" type="{{ audio.mime_type | default: 'audio/mpeg' }}">
           Your browser does not support the audio element.
         </audio>
       </figure>
-    {% endfor %}
-  {% endif %}
+    {% endcapture %}
+    {% assign media_snippets = media_snippets | push: html %}
+  {% endfor %}
+{% endif %}
 
-  <!-- Uploaded Video Files -->
-  {% assign media_videos = article.metafields.custom.media_video.value %}
-  {% if media_videos %}
-    {% for video in media_videos %}
-      <figure>
+{%- comment -%} 3. UPLOADED VIDEOS (Shopify video objects) {%- endcomment -%}
+{% assign media_videos = article.metafields.custom.media_video.value %}
+{% if media_videos %}
+  {% for video in media_videos %}
+    {% capture html %}
+      <figure class="article-inline-media article-inline-media--video">
         {{ video | video_tag: controls: true, preload: "metadata" }}
       </figure>
-    {% endfor %}
-  {% endif %}
+    {% endcapture %}
+    {% assign media_snippets = media_snippets | push: html %}
+  {% endfor %}
+{% endif %}
 
-  <!-- External Video Links (YouTube/Vimeo) -->
-  {% assign media_video_links = article.metafields.custom.media_video_link.value %}
-  {% if media_video_links %}
-    {% for link in media_video_links %}
-      {% assign embed_link = link
-        | replace: "watch?v=", "embed/"
-        | replace: "youtu.be/", "youtube.com/embed/"
-        | replace: "&list", "?list"
-      %}
-      <figure>
+{%- comment -%} 4. EXTERNAL VIDEO LINKS (YouTube/Vimeo) {%- endcomment -%}
+{% assign media_video_links = article.metafields.custom.media_video_link.value %}
+{% if media_video_links %}
+  {% for link in media_video_links %}
+    {% assign embed_link = link
+      | replace: "watch?v=", "embed/"
+      | replace: "youtu.be/", "youtube.com/embed/"
+      | replace: "&list", "?list"
+    %}
+    {% capture html %}
+      <figure class="article-inline-media article-inline-media--external-video">
         <iframe
           src="{{ embed_link | escape }}"
           frameborder="0"
@@ -114,14 +129,103 @@
           allowfullscreen
         ></iframe>
       </figure>
-    {% endfor %}
-  {% endif %}
+    {% endcapture %}
+    {% assign media_snippets = media_snippets | push: html %}
+  {% endfor %}
+{% endif %}
 
-</div>
+{%- comment -%}
+----------------------------------------------------
+Convert Liquid array → JSON string (with safe escaping)
+----------------------------------------------------
+{%- endcomment -%}
+{% assign json_snippets = '[' %}
+{% for s in media_snippets %}
+  {% assign safe_s = s | strip_newlines | escape %}
+  {% assign json_snippets = json_snippets | append: '"' | append: safe_s | append: '"' %}
+  {% unless forloop.last %}
+    {% assign json_snippets = json_snippets | append: ',' %}
+  {% endunless %}
+{% endfor %}
+{% assign json_snippets = json_snippets | append: ']' %}
 
-<!-- ============================= -->
-<!-- End Bideshi Custom Multimedia Layer -->
-<!-- ============================= -->
+<script>
+  // =========================================
+  // Inline Media Token Replacement Script
+  // =========================================
+  (function () {
+    // Load array of escaped HTML snippets from Liquid
+    var raw = {{ json_snippets }};
+    var mediaSnippets = [];
+
+    try {
+      // Unescape Liquid-escaped HTML entities
+      mediaSnippets = raw.map(function(item) {
+        return item
+          .replace(/&quot;/g, '"')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&amp;/g, '&');
+      });
+    } catch (e) {
+      console.warn('Bideshi inline media: unable to parse snippets', e);
+    }
+
+    if (!mediaSnippets.length) return;
+
+    // Token pattern: [media:0], [media:1], etc.
+    var tokenRe = /\[media:(\d+)\]/g;
+
+    // Select article content containers (Dawn + similar themes)
+    var containers = document.querySelectorAll('.rte, .article__content, .blog-post .rte, .blog-post__content');
+    if (!containers.length) containers = document.querySelectorAll('article, .article');
+
+    // Recursive node replacement
+    function replaceInNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        var text = node.nodeValue;
+        var frag = document.createDocumentFragment();
+        var lastIndex = 0, match;
+        tokenRe.lastIndex = 0;
+        var hasToken = false;
+
+        while ((match = tokenRe.exec(text)) !== null) {
+          hasToken = true;
+          var idx = parseInt(match[1], 10);
+          var before = text.slice(lastIndex, match.index);
+          if (before) frag.appendChild(document.createTextNode(before));
+
+          if (!isNaN(idx) && mediaSnippets[idx]) {
+            var wrapper = document.createElement('div');
+            wrapper.innerHTML = mediaSnippets[idx];
+            while (wrapper.firstChild) frag.appendChild(wrapper.firstChild);
+          } else {
+            frag.appendChild(document.createTextNode(match[0]));
+          }
+          lastIndex = tokenRe.lastIndex;
+        }
+
+        if (!hasToken) return;
+        var after = text.slice(lastIndex);
+        if (after) frag.appendChild(document.createTextNode(after));
+        node.parentNode.replaceChild(frag, node);
+      } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
+        Array.from(node.childNodes).forEach(replaceInNode);
+      }
+    }
+
+    containers.forEach(function(container) {
+      replaceInNode(container);
+    });
+
+    // Hide fallback end-of-article block if replacement succeeded
+    var fallback = document.querySelector('.article-media-fallback');
+    if (fallback && mediaSnippets.length) fallback.style.display = 'none';
+  })();
+</script>
+{%- comment -%} End of Bideshi Custom Multimedia Layer {%- endcomment -%}
+
+
     
     {% if blog.comments_enabled? %}
       <div class="blog-post-comments-container">
