@@ -46,10 +46,10 @@
   {% if media_audios %}
     {% for audio in media_audios %}
       <audio controls preload="none" class="article-audio">
-        <source src="{{ audio | file_url }}" type="{{ audio.mime_type | default: 'audio/mpeg' }}">
+        <source src="{{ audio.url }}" type="{{ audio.mime_type | default: 'audio/mpeg' }}">
         Your browser does not support the audio element.
       </audio>
-      <p class="debug-url">{{ audio | file_url }}</p> <!-- optional debug -->
+      <p class="debug-url">{{ audio.url }}</p> <!-- debug -->
     {% endfor %}
   {% endif %}
 
@@ -57,11 +57,8 @@
   {% assign media_videos = article.metafields.custom.media_video.value %}
   {% if media_videos %}
     {% for video in media_videos %}
-      <video controls preload="metadata" class="article-video">
-        <source src="{{ video.sources[0].url }}" type="{{ video.sources[0].format }}">
-        Your browser does not support the video tag.
-      </video>
-      <p class="debug-url">{{ video.sources[0].url }}</p> <!-- optional debug -->
+      {{ video | video_tag: controls: true, preload: "metadata", class: "article-video" }}
+      <p class="debug-url">{{ video.sources[0].url }}</p> <!-- debug -->
     {% endfor %}
   {% endif %}
 
@@ -82,7 +79,7 @@
           allowfullscreen
         ></iframe>
       </div>
-      <p class="debug-url">{{ embed_link }}</p> <!-- optional debug -->
+      <p class="debug-url">{{ embed_link }}</p> <!-- debug -->
     {% endfor %}
   {% endif %}
 
