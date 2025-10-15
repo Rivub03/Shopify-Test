@@ -34,7 +34,7 @@
       width="500"
       height="600"
       class="article-image"
-      alt = "{{ article.title }}"
+      alt = "{{ article.metafields.custom.media_image.name | escape }}"
     >
   {% endif %}
 
