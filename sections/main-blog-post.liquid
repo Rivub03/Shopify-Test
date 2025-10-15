@@ -26,9 +26,8 @@
     {%- content_for 'block', id: 'blog-post-content', type: '_blog-post-content' %}
 
 <!-- ============================= -->
-<!-- Bideshi Custom Multimedia Layer -->
+<!-- Bideshi Custom Multimedia Layer (with Captions) -->
 <!-- ============================= -->
-
 <style>
   .article-media {
     margin: 2.5rem 0;
@@ -59,6 +58,7 @@
 </style>
 
 <div class="article-media">
+  {% assign captions = article.metafields.custom.media_captions.value %}
 
   <!-- Images -->
   {% assign media_images = article.metafields.custom.media_image.value %}
@@ -70,6 +70,9 @@
           alt="{{ article.title }}"
           loading="lazy"
         >
+        {% if captions and captions[forloop.index0] %}
+          <figcaption>{{ captions[forloop.index0] }}</figcaption>
+        {% endif %}
       </figure>
     {% endfor %}
   {% endif %}
@@ -83,6 +86,9 @@
           <source src="{{ audio.url }}" type="{{ audio.mime_type | default: 'audio/mpeg' }}">
           Your browser does not support the audio element.
         </audio>
+        {% if captions and captions[forloop.index0] %}
+          <figcaption>{{ captions[forloop.index0] }}</figcaption>
+        {% endif %}
       </figure>
     {% endfor %}
   {% endif %}
@@ -93,6 +99,9 @@
     {% for video in media_videos %}
       <figure>
         {{ video | video_tag: controls: true, preload: "metadata" }}
+        {% if captions and captions[forloop.index0] %}
+          <figcaption>{{ captions[forloop.index0] }}</figcaption>
+        {% endif %}
       </figure>
     {% endfor %}
   {% endif %}
@@ -113,12 +122,13 @@
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen
         ></iframe>
+        {% if captions and captions[forloop.index0] %}
+          <figcaption>{{ captions[forloop.index0] }}</figcaption>
+        {% endif %}
       </figure>
     {% endfor %}
   {% endif %}
-
 </div>
-
 <!-- ============================= -->
 <!-- End Bideshi Custom Multimedia Layer -->
 <!-- ============================= -->
