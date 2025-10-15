@@ -26,35 +26,40 @@
     {%- content_for 'block', id: 'blog-post-content', type: '_blog-post-content' %}
 
 <!-- Custom Multimedia Layers -->
-<div class="article-media">
-  {% if article.metafields.custom.media_image %}
-    <img
-      src="{{ article.metafields.custom.media_image | file_url }}"
-      alt="{{ article.title }}"
-      width="500"
-      height="600"
-      class="article-image"
-      alt = "{{ article.metafields.custom.media_image.name | escape }}"
-    >
-  {% endif %}
+{%- comment -%} DEBUG: show article and metafield raw values {%- endcomment -%}
+<div style="border:2px dashed #f0a; padding:12px; margin:1.5rem 0; background:#fff8fb;">
+  <strong>DEBUG: article handles and metafields</strong>
+  <ul>
+    <li>Article handle: {{ article.handle }}</li>
+    <li>Article ID: {{ article.id }}</li>
+    <li>Article title: {{ article.title }}</li>
+  </ul>
 
-  {% if article.metafields.custom.media_audio %}
-    <audio controls class="article-audio">
-      <source src="{{ article.metafields.custom.media_audio | file_url }}" type="audio/mpeg">
-      Your browser does not support the audio element.
-    </audio>
-  {% endif %}
+  <p><strong>Raw metafield output (default):</strong><br>
+    {{ article.metafields.custom.media_image | default: "NOT SET" }}
+  </p>
 
-  {% if article.metafields.custom.media_video %}
-    <div class="article-video">
-      <iframe
-        src="{{ article.metafields.custom.media_video }}"
-        frameborder="0"
-        allowfullscreen
-      ></iframe>
-    </div>
-  {% endif %}
+  <p><strong>Try as file_url:</strong><br>
+    {{ article.metafields.custom.media_image | file_url | default: "file_url returned nothing" }}
+  </p>
+
+  <p><strong>Try .value (if present):</strong><br>
+    {{ article.metafields.custom.media_image.value | default: "no .value" }}
+  </p>
+
+  <p><strong>Try as direct href (click to open):</strong><br>
+    <a id="debug-file-link" href="{{ article.metafields.custom.media_image | file_url }}">{{ article.metafields.custom.media_image | file_url }}</a>
+  </p>
+
+  <p><strong>Try rendering as &lt;img&gt; (no sizing):</strong><br>
+    {% if article.metafields.custom.media_image %}
+      <img src="{{ article.metafields.custom.media_image | file_url }}" alt="debug image" style="max-width:220px; display:block; margin-top:8px;">
+    {% else %}
+      <span style="color:#c00">metafield not present</span>
+    {% endif %}
+  </p>
 </div>
+
 <!-- Custom Multimedia Layers End -->
     
     {% if blog.comments_enabled? %}
