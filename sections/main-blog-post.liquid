@@ -150,77 +150,137 @@ Convert Liquid array → JSON string (with safe escaping)
 {% assign json_snippets = json_snippets | append: ']' %}
 
 <script>
-  // =========================================
-  // Inline Media Token Replacement Script
-  // =========================================
   (function () {
-    // Load array of escaped HTML snippets from Liquid
-    var raw = {{ json_snippets }};
-    var mediaSnippets = [];
+    // Wait for DOM ready — this avoids timing issues
+    function onReady(fn) {
+      if (document.readyState === "complete" || document.readyState === "interactive") {
+        setTimeout(fn, 0);
+      } else {
+        document.addEventListener('DOMContentLoaded', fn);
+      }
+    }
 
-    try {
-      // Unescape Liquid-escaped HTML entities
-      mediaSnippets = raw.map(function(item) {
+    onReady(function () {
+      // -- 1) read the JSON produced by Liquid (json_snippets)
+      var rawFromLiquid = null;
+      try {
+        rawFromLiquid = {{ json_snippets }};
+        // rawFromLiquid should already be a JS array literal produced by Liquid
+      } catch (err) {
+        console.error('Bideshi inline media: error reading json_snippets from Liquid', err);
+      }
+
+      // If rawFromLiquid is a string (unlikely) try JSON.parse
+      var raw = [];
+      if (Array.isArray(rawFromLiquid)) {
+        raw = rawFromLiquid;
+      } else if (typeof rawFromLiquid === 'string') {
+        try {
+          raw = JSON.parse(rawFromLiquid);
+        } catch (e) {
+          console.warn('Bideshi inline media: json_snippets is string but JSON.parse failed', e, rawFromLiquid);
+        }
+      }
+
+      console.info('Bideshi inline media: snippets count =', raw.length);
+
+      // Unescape HTML entities produced by Liquid's escape()
+      var mediaSnippets = raw.map(function(item) {
+        if (typeof item !== 'string') return '';
         return item
           .replace(/&quot;/g, '"')
           .replace(/&lt;/g, '<')
           .replace(/&gt;/g, '>')
           .replace(/&amp;/g, '&');
-      });
-    } catch (e) {
-      console.warn('Bideshi inline media: unable to parse snippets', e);
-    }
+      }).filter(Boolean);
 
-    if (!mediaSnippets.length) return;
-
-    // Token pattern: [media:0], [media:1], etc.
-    var tokenRe = /\[media:(\d+)\]/g;
-
-    // Select article content containers (Dawn + similar themes)
-    var containers = document.querySelectorAll('.rte, .article__content, .blog-post .rte, .blog-post__content');
-    if (!containers.length) containers = document.querySelectorAll('article, .article');
-
-    // Recursive node replacement
-    function replaceInNode(node) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        var text = node.nodeValue;
-        var frag = document.createDocumentFragment();
-        var lastIndex = 0, match;
-        tokenRe.lastIndex = 0;
-        var hasToken = false;
-
-        while ((match = tokenRe.exec(text)) !== null) {
-          hasToken = true;
-          var idx = parseInt(match[1], 10);
-          var before = text.slice(lastIndex, match.index);
-          if (before) frag.appendChild(document.createTextNode(before));
-
-          if (!isNaN(idx) && mediaSnippets[idx]) {
-            var wrapper = document.createElement('div');
-            wrapper.innerHTML = mediaSnippets[idx];
-            while (wrapper.firstChild) frag.appendChild(wrapper.firstChild);
-          } else {
-            frag.appendChild(document.createTextNode(match[0]));
-          }
-          lastIndex = tokenRe.lastIndex;
-        }
-
-        if (!hasToken) return;
-        var after = text.slice(lastIndex);
-        if (after) frag.appendChild(document.createTextNode(after));
-        node.parentNode.replaceChild(frag, node);
-      } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
-        Array.from(node.childNodes).forEach(replaceInNode);
+      if (!mediaSnippets.length) {
+        console.info('Bideshi inline media: no media snippets to insert — nothing to do.');
+        return;
       }
-    }
 
-    containers.forEach(function(container) {
-      replaceInNode(container);
-    });
+      // -- 2) find sensible containers (broad set, more than before)
+      var selectorList = [
+        '.rte',
+        '.article__content',
+        '.blog-post .rte',
+        '.blog-post__content',
+        '.article',
+        'article',
+        '.section-content-wrapper .rte'
+      ];
+      var containers = [];
+      selectorList.forEach(function(sel) {
+        document.querySelectorAll(sel).forEach(function(el) {
+          if (containers.indexOf(el) === -1) containers.push(el);
+        });
+      });
 
-    // Hide fallback end-of-article block if replacement succeeded
-    var fallback = document.querySelector('.article-media-fallback');
-    if (fallback && mediaSnippets.length) fallback.style.display = 'none';
+      console.info('Bideshi inline media: containers found =', containers.length, containers);
+
+      if (!containers.length) {
+        console.warn('Bideshi inline media: no article containers found; adjust selectors if needed.');
+        return;
+      }
+
+      var tokenRe = /\[media:(\d+)\]/g;
+
+      function replaceInNode(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          var text = node.nodeValue;
+          tokenRe.lastIndex = 0;
+          var match, lastIndex = 0, hasToken = false;
+          var frag = document.createDocumentFragment();
+
+          while ((match = tokenRe.exec(text)) !== null) {
+            hasToken = true;
+            var idx = parseInt(match[1], 10);
+            var before = text.slice(lastIndex, match.index);
+            if (before) frag.appendChild(document.createTextNode(before));
+
+            if (!isNaN(idx) && mediaSnippets[idx]) {
+              var wrapper = document.createElement('div');
+              wrapper.innerHTML = mediaSnippets[idx];
+              while (wrapper.firstChild) frag.appendChild(wrapper.firstChild);
+            } else {
+              frag.appendChild(document.createTextNode(match[0]));
+            }
+            lastIndex = tokenRe.lastIndex;
+          }
+
+          if (!hasToken) return false;
+          var after = text.slice(lastIndex);
+          if (after) frag.appendChild(document.createTextNode(after));
+          node.parentNode.replaceChild(frag, node);
+          return true;
+        } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
+          // Walk children snapshot to avoid live NodeList issues
+          var children = Array.prototype.slice.call(node.childNodes);
+          for (var i = 0; i < children.length; i++) replaceInNode(children[i]);
+        }
+        return false;
+      }
+
+      // Run replacement on each container
+      var replacedAny = false;
+      containers.forEach(function(container) {
+        try {
+          var r = replaceInNode(container);
+          if (r) replacedAny = true;
+        } catch (e) {
+          console.error('Bideshi inline media: error replacing in container', e, container);
+        }
+      });
+
+      if (replacedAny) {
+        console.info('Bideshi inline media: token replacement performed.');
+        var fallback = document.querySelector('.article-media-fallback');
+        if (fallback) fallback.style.display = 'none';
+      } else {
+        console.info('Bideshi inline media: no token occurrences found in selected containers.');
+      }
+
+    }); // onReady
   })();
 </script>
 {%- comment -%} End of Bideshi Custom Multimedia Layer {%- endcomment -%}
