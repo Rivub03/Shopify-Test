@@ -27,13 +27,16 @@
 
 <!-- Custom Multimedia Layers -->
 <div class="article-media">
-  {% if article.metafields.custom.media_image.value %}
-  <img
-    src="{{ article.metafields.custom.media_image.value | first | image_url: width: 1200 }}"
-    alt="{{ article.title }}"
-    class="article-image"
-    loading="lazy"
-  >
+{% assign media_images = article.metafields.custom.media_image.value %}
+{% if media_images %}
+  {% for media in media_images %}
+    <img
+      src="{{ media | image_url: width: 1200 }}"
+      alt="{{ article.title }}"
+      class="article-image"
+      loading="lazy"
+    >
+  {% endfor %}
 {% endif %}
 
   {% if article.metafields.custom.media_audio %}
