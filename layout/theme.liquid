@@ -1,0 +1,20 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page_title }} - {{ shop.name }}</title>
+    {{ 'theme.css' | asset_url | stylesheet_tag }}
+    {{ content_for_header }}
+</head>
+<body>
+    <header>
+        <h1>{{ shop.name }}</h1>
+    </header>
+    <main>
+        {{ content }}
+    </main>
+    <footer>
+        <p>&copy; {{ 'now' | date: '%Y' }} {{ shop.name }}</p>
+    </footer>
+</body>
+</html>
