@@ -27,25 +27,25 @@
 
 <!-- Custom Multimedia Layers -->
 <div class="article-media">
-  {% if article.metafields.media.image %}
+  {% if article.metafields.custom.media_image %}
     <img
-      src="{{ article.metafields.media.image | img_url: 'master' }}" width="500" height="600"
+      src="{{ article.metafields.custom.media_image | img_url: 'master' }}" width="500" height="600"
       alt="{{ article.title }}"
       class="article-image"
     >
   {% endif %}
 
-  {% if article.metafields.media.audio %}
+  {% if article.metafields.custom.media_audio %}
     <audio controls class="article-audio">
-      <source src="{{ article.metafields.media.audio }}" type="audio/mpeg">
+      <source src="{{ article.metafields.custom.media_audio }}" type="audio/mpeg">
       Your browser does not support the audio element.
     </audio>
   {% endif %}
 
-  {% if article.metafields.media.video %}
+  {% if article.metafields.custom.media_video %}
     <div class="article-video">
       <iframe
-        src="{{ article.metafields.media.video }}"
+        src="{{ article.metafields.custom.media_video }}"
         frameborder="0"
         allowfullscreen
       ></iframe>
