@@ -26,8 +26,9 @@
     {%- content_for 'block', id: 'blog-post-content', type: '_blog-post-content' %}
 
 <!-- ============================= -->
-<!-- Bideshi Custom Multimedia Layer (with Captions) -->
+<!-- Bideshi Custom Multimedia Layer -->
 <!-- ============================= -->
+
 <style>
   .article-media {
     margin: 2.5rem 0;
@@ -58,7 +59,6 @@
 </style>
 
 <div class="article-media">
-  {% assign captions = article.metafields.custom.media_captions.value %}
 
   <!-- Images -->
   {% assign media_images = article.metafields.custom.media_image.value %}
@@ -70,9 +70,6 @@
           alt="{{ article.title }}"
           loading="lazy"
         >
-        {% if captions and captions[forloop.index0] %}
-          <figcaption>{{ captions[forloop.index0] }}</figcaption>
-        {% endif %}
       </figure>
     {% endfor %}
   {% endif %}
@@ -86,9 +83,6 @@
           <source src="{{ audio.url }}" type="{{ audio.mime_type | default: 'audio/mpeg' }}">
           Your browser does not support the audio element.
         </audio>
-        {% if captions and captions[forloop.index0] %}
-          <figcaption>{{ captions[forloop.index0] }}</figcaption>
-        {% endif %}
       </figure>
     {% endfor %}
   {% endif %}
@@ -99,9 +93,6 @@
     {% for video in media_videos %}
       <figure>
         {{ video | video_tag: controls: true, preload: "metadata" }}
-        {% if captions and captions[forloop.index0] %}
-          <figcaption>{{ captions[forloop.index0] }}</figcaption>
-        {% endif %}
       </figure>
     {% endfor %}
   {% endif %}
@@ -122,42 +113,15 @@
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen
         ></iframe>
-        {% if captions and captions[forloop.index0] %}
-          <figcaption>{{ captions[forloop.index0] }}</figcaption>
-        {% endif %}
       </figure>
     {% endfor %}
   {% endif %}
+
 </div>
+
 <!-- ============================= -->
 <!-- End Bideshi Custom Multimedia Layer -->
 <!-- ============================= -->
-
-
-<!--Debugging-->
-<div style="border:2px dashed #06f; padding:12px; margin:1.5rem 0; background:#f0f8ff;">
-  <strong>DEBUG: Multimedia Metafield Values</strong><br>
-
-  <p><b>Audio metafield (raw):</b><br>
-  {{ article.metafields.custom.media_audio | default: "⚠️ No metafield found" }}</p>
-
-  <p><b>Audio metafield (.value):</b><br>
-  {{ article.metafields.custom.media_audio.value | default: "⚠️ No .value" }}</p>
-
-  <p><b>Video metafield (raw):</b><br>
-  {{ article.metafields.custom.media_video | default: "⚠️ No metafield found" }}</p>
-
-  <p><b>Video metafield (.value):</b><br>
-  {{ article.metafields.custom.media_video.value | default: "⚠️ No .value" }}</p>
-
-  <p><b>Video link metafield (raw):</b><br>
-  {{ article.metafields.custom.media_video_link | default: "⚠️ No metafield found" }}</p>
-
-  <p><b>Video link metafield (.value):</b><br>
-  {{ article.metafields.custom.media_video_link.value | default: "⚠️ No .value" }}</p>
-</div>
-
-<!--Debugging End-->
     
     {% if blog.comments_enabled? %}
       <div class="blog-post-comments-container">
