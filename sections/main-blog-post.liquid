@@ -72,6 +72,20 @@
   {% endif %}
 </div>
 <!-- Custom Multimedia Layers End -->
+<!--Debugging-->
+<div style="border:2px dashed #06f; padding:12px; margin:1.5rem 0; background:#f0f8ff;">
+  <strong>DEBUG: Multimedia Metafield Values</strong><br>
+
+  <p><b>Audio metafield raw:</b><br>
+  {{ article.metafields.custom.media_audio | json }}</p>
+
+  <p><b>Video metafield raw:</b><br>
+  {{ article.metafields.custom.media_video | json }}</p>
+
+  <p><b>Video link metafield raw:</b><br>
+  {{ article.metafields.custom.media_video_link | json }}</p>
+</div>
+<!--Debugging End-->
     
     {% if blog.comments_enabled? %}
       <div class="blog-post-comments-container">
