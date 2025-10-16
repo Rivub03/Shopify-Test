@@ -23,267 +23,203 @@
     {%- if article.image -%}
       {%- content_for 'block', id: 'blog-post-image', type: '_blog-post-featured-image', image: article.image %}
     {%- endif -%}
-    {%- content_for 'block', id: 'blog-post-content', type: '_blog-post-content' %}
+   <div class="article-content rte">
+      {{ processed_content }}
+    </div>
 
 <!-- ============================= -->
 <!-- Bideshi Custom Multimedia Layer -->
 <!-- ============================= -->
 
 <style>
-  .article-media {
-    margin: 2.5rem 0;
-    display: grid;
-    gap: 1.75rem;
-  }
-  .article-media img,
-  .article-media video,
-  .article-media iframe {
-    width: 100%;
-    max-width: 100%;
-    border-radius: 1rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  }
-  .article-media audio {
-    width: 100%;
-    margin-top: 0.5rem;
-  }
-  .article-media iframe {
-    aspect-ratio: 16 / 9;
-  }
-  .article-media figcaption {
-    font-size: 0.875rem;
-    color: rgba(0,0,0,0.6);
-    margin-top: 0.4rem;
-    text-align: center;
-  }
+  /*     Bideshi Custom Multimedia Layer CSS (UPDATED FOR INLINE/RESPONSIVE) 
+  */
+  
+  /* 1. Generic Media Figure Styling */
+  .article-content figure {
+    margin: 2.5rem auto; /* Vertical space for media blocks */
+    max-width: 100%;
+  }
+  
+  .article-content figcaption {
+    font-style: italic;
+    font-size: 0.875rem;
+    color: rgba(0,0,0,0.6);
+    margin-top: 0.8rem;
+    text-align: left; /* Captions align to the left */
+    padding: 0 10px;
+  }
+  
+  /* 2. Fluid Images and Audio */
+  .article-content img,
+  .article-content video,
+  .article-content audio {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border-radius: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  
+  /* Audio player can't use box-shadow well, so we remove it. */
+  .article-content audio {
+    box-shadow: none;
+    margin: 1.5rem auto;
+  }
+
+  /* 3. The Responsive Aspect Ratio Hack (CRITICAL for videos/iframes) */
+  .video-container-wrapper {
+    position: relative; 
+    width: 100%;
+    height: 0;
+    /* Forces a 16:9 aspect ratio regardless of container width */
+    padding-bottom: 56.25%; 
+    margin-bottom: 0.5em; 
+  }
+
+  /* Make the video/iframe fill the wrapper */
+  .video-container-wrapper iframe,
+  .video-container-wrapper video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
 </style>
+{% comment %}
+  ==============================================================
+  INLINE MEDIA INJECTION LOGIC
+  - This block processes all metafield media and replaces the markers
+  - The processed content is stored in the 'processed_content' variable
+  ==============================================================
+{% endcomment %}
 
-{%- comment -%}
-====================================================
-BIDESH I INLINE MEDIA EMBEDDING SYSTEM
-Authors can embed uploaded media inline in article text
-using tokens like [media:0], [media:1], etc.
-====================================================
-{%- endcomment -%}
+{% liquid 
+  assign processed_content = article.content
+  assign marker_index = 0
+  assign media_html = ''
+%}
 
-{%- comment -%} Initialize an empty array {%- endcomment -%}
-{% assign media_snippets = '' | split: '__EMPTY__' %}
+{% comment %}
+  -------------------------------------------------------------
+  1. Process Images: Marker Format [IMG_1], [IMG_2], etc.
+  -------------------------------------------------------------
+{% endcomment %}
+{%- assign media_images = article.metafields.custom.media_image.value -%}
+{%- if media_images -%}
+  {%- for image in media_images -%}
+    {%- liquid
+      assign marker_index = forloop.index
+      assign marker = '[IMG_' | append: marker_index | append: ']'
+      
+      # Build the image HTML with figure tag
+      capture media_html
+        echo '<figure>'
+        echo image | image_url: width: 1200 | image_tag: loading: 'lazy', alt: article.title
+        echo '</figure>'
+      endcapture
+      
+      # Inject the HTML into the content
+      assign processed_content = processed_content | replace: marker, media_html
+    -%}
+  {%- endfor -%}
+{%- endif -%}
 
-{%- comment -%} 1. IMAGES {%- endcomment -%}
-{% assign media_images = article.metafields.custom.media_image.value %}
-{% if media_images %}
-  {% for img in media_images %}
-    {% capture html %}
-      <figure class="article-inline-media article-inline-media--image">
-        <img src="{{ img | image_url: width: 1200 }}" alt="{{ article.title }}" loading="lazy">
-      </figure>
-    {% endcapture %}
-    {% assign media_snippets = media_snippets | push: html %}
-  {% endfor %}
-{% endif %}
+{% comment %}
+  -------------------------------------------------------------
+  2. Process Uploaded Videos: Marker Format [VID_1], [VID_2], etc.
+  -------------------------------------------------------------
+{% endcomment %}
+{%- assign media_videos = article.metafields.custom.media_video.value -%}
+{%- if media_videos -%}
+  {%- for video in media_videos -%}
+    {%- liquid
+      assign marker_index = forloop.index
+      assign marker = '[VID_' | append: marker_index | append: ']'
+      
+      # Build the uploaded video HTML, wrapped in the responsive container
+      capture media_html
+        echo '<figure>'
+        echo '<div class="video-container-wrapper">'
+        echo video | video_tag: controls: 'controls', preload: "metadata"
+        echo '</div>'
+        echo '</figure>'
+      endcapture
+      
+      # Inject the HTML into the content
+      assign processed_content = processed_content | replace: marker, media_html
+    -%}
+  {%- endfor -%}
+{%- endif -%}
 
-{%- comment -%} 2. AUDIO {%- endcomment -%}
-{% assign media_audios = article.metafields.custom.media_audio.value %}
-{% if media_audios %}
-  {% for audio in media_audios %}
-    {% capture html %}
-      <figure class="article-inline-media article-inline-media--audio">
-        <audio controls preload="none">
-          <source src="{{ audio.url | default: audio | file_url }}" type="{{ audio.mime_type | default: 'audio/mpeg' }}">
-          Your browser does not support the audio element.
-        </audio>
-      </figure>
-    {% endcapture %}
-    {% assign media_snippets = media_snippets | push: html %}
-  {% endfor %}
-{% endif %}
+{% comment %}
+  -------------------------------------------------------------
+  3. Process External Videos: Marker Format [EXT_1], [EXT_2], etc.
+  -------------------------------------------------------------
+{% endcomment %}
+{%- assign media_video_links = article.metafields.custom.media_video_link.value -%}
+{%- if media_video_links -%}
+  {%- for link in media_video_links -%}
+    {%- liquid
+      assign marker_index = forloop.index
+      assign marker = '[EXT_' | append: marker_index | append: ']'
+      
+      # Use your existing URL manipulation logic
+      assign embed_link = link
+        | replace: "watch?v=", "embed/"
+        | replace: "youtu.be/", "youtube.com/embed/"
+        | replace: "&list", "?list"
+        
+      # Build the iframe HTML, wrapped in the responsive container
+      capture media_html
+        echo '<figure>'
+        echo '<div class="video-container-wrapper">'
+        echo '<iframe src="' | append: embed_link | append: '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
+        echo '</div>'
+        echo '</figure>'
+      endcapture
+      
+      # Inject the HTML into the content
+      assign processed_content = processed_content | replace: marker, media_html
+    -%}
+  {%- endfor -%}
+{%- endif -%}
 
-{%- comment -%} 3. UPLOADED VIDEOS (Shopify video objects) {%- endcomment -%}
-{% assign media_videos = article.metafields.custom.media_video.value %}
-{% if media_videos %}
-  {% for video in media_videos %}
-    {% capture html %}
-      <figure class="article-inline-media article-inline-media--video">
-        {{ video | video_tag: controls: true, preload: "metadata" }}
-      </figure>
-    {% endcapture %}
-    {% assign media_snippets = media_snippets | push: html %}
-  {% endfor %}
-{% endif %}
+{% comment %}
+  -------------------------------------------------------------
+  4. Process Audio Files: Marker Format [AUD_1], [AUD_2], etc.
+  -------------------------------------------------------------
+{% endcomment %}
+{%- assign media_audios = article.metafields.custom.media_audio.value -%}
+{%- if media_audios -%}
+  {%- for audio in media_audios -%}
+    {%- liquid
+      assign marker_index = forloop.index
+      assign marker = '[AUD_' | append: marker_index | append: ']'
+      
+      # Build the audio HTML
+      capture media_html
+        echo '<figure>'
+        echo '<audio controls preload="none"><source src="' | append: audio.url | append: '" type="' | append: audio.mime_type | default: 'audio/mpeg' | append: '">Your browser does not support the audio element.</audio>'
+        echo '</figure>'
+      endcapture
+      
+      # Inject the HTML into the content
+      assign processed_content = processed_content | replace: marker, media_html
+    -%}
+  {%- endfor -%}
+{%- endif -%}
 
-{%- comment -%} 4. EXTERNAL VIDEO LINKS (YouTube/Vimeo) {%- endcomment -%}
-{% assign media_video_links = article.metafields.custom.media_video_link.value %}
-{% if media_video_links %}
-  {% for link in media_video_links %}
-    {% assign embed_link = link
-      | replace: "watch?v=", "embed/"
-      | replace: "youtu.be/", "youtube.com/embed/"
-      | replace: "&list", "?list"
-    %}
-    {% capture html %}
-      <figure class="article-inline-media article-inline-media--external-video">
-        <iframe
-          src="{{ embed_link | escape }}"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen
-        ></iframe>
-      </figure>
-    {% endcapture %}
-    {% assign media_snippets = media_snippets | push: html %}
-  {% endfor %}
-{% endif %}
-
-{%- comment -%}
-----------------------------------------------------
-Convert Liquid array → JSON string (with safe escaping)
-----------------------------------------------------
-{%- endcomment -%}
-{% assign json_snippets = '[' %}
-{% for s in media_snippets %}
-  {% assign safe_s = s | strip_newlines | escape %}
-  {% assign json_snippets = json_snippets | append: '"' | append: safe_s | append: '"' %}
-  {% unless forloop.last %}
-    {% assign json_snippets = json_snippets | append: ',' %}
-  {% endunless %}
-{% endfor %}
-{% assign json_snippets = json_snippets | append: ']' %}
-
-<script>
-  (function () {
-    // Wait for DOM ready — this avoids timing issues
-    function onReady(fn) {
-      if (document.readyState === "complete" || document.readyState === "interactive") {
-        setTimeout(fn, 0);
-      } else {
-        document.addEventListener('DOMContentLoaded', fn);
-      }
-    }
-
-    onReady(function () {
-      // -- 1) read the JSON produced by Liquid (json_snippets)
-      var rawFromLiquid = null;
-      try {
-        rawFromLiquid = {{ json_snippets }};
-        // rawFromLiquid should already be a JS array literal produced by Liquid
-      } catch (err) {
-        console.error('Bideshi inline media: error reading json_snippets from Liquid', err);
-      }
-
-      // If rawFromLiquid is a string (unlikely) try JSON.parse
-      var raw = [];
-      if (Array.isArray(rawFromLiquid)) {
-        raw = rawFromLiquid;
-      } else if (typeof rawFromLiquid === 'string') {
-        try {
-          raw = JSON.parse(rawFromLiquid);
-        } catch (e) {
-          console.warn('Bideshi inline media: json_snippets is string but JSON.parse failed', e, rawFromLiquid);
-        }
-      }
-
-      console.info('Bideshi inline media: snippets count =', raw.length);
-
-      // Unescape HTML entities produced by Liquid's escape()
-      var mediaSnippets = raw.map(function(item) {
-        if (typeof item !== 'string') return '';
-        return item
-          .replace(/&quot;/g, '"')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&amp;/g, '&');
-      }).filter(Boolean);
-
-      if (!mediaSnippets.length) {
-        console.info('Bideshi inline media: no media snippets to insert — nothing to do.');
-        return;
-      }
-
-      // -- 2) find sensible containers (broad set, more than before)
-      var selectorList = [
-        '.rte',
-        '.article__content',
-        '.blog-post .rte',
-        '.blog-post__content',
-        '.article',
-        'article',
-        '.section-content-wrapper .rte'
-      ];
-      var containers = [];
-      selectorList.forEach(function(sel) {
-        document.querySelectorAll(sel).forEach(function(el) {
-          if (containers.indexOf(el) === -1) containers.push(el);
-        });
-      });
-
-      console.info('Bideshi inline media: containers found =', containers.length, containers);
-
-      if (!containers.length) {
-        console.warn('Bideshi inline media: no article containers found; adjust selectors if needed.');
-        return;
-      }
-
-      var tokenRe = /\[media:(\d+)\]/g;
-
-      function replaceInNode(node) {
-        if (node.nodeType === Node.TEXT_NODE) {
-          var text = node.nodeValue;
-          tokenRe.lastIndex = 0;
-          var match, lastIndex = 0, hasToken = false;
-          var frag = document.createDocumentFragment();
-
-          while ((match = tokenRe.exec(text)) !== null) {
-            hasToken = true;
-            var idx = parseInt(match[1], 10);
-            var before = text.slice(lastIndex, match.index);
-            if (before) frag.appendChild(document.createTextNode(before));
-
-            if (!isNaN(idx) && mediaSnippets[idx]) {
-              var wrapper = document.createElement('div');
-              wrapper.innerHTML = mediaSnippets[idx];
-              while (wrapper.firstChild) frag.appendChild(wrapper.firstChild);
-            } else {
-              frag.appendChild(document.createTextNode(match[0]));
-            }
-            lastIndex = tokenRe.lastIndex;
-          }
-
-          if (!hasToken) return false;
-          var after = text.slice(lastIndex);
-          if (after) frag.appendChild(document.createTextNode(after));
-          node.parentNode.replaceChild(frag, node);
-          return true;
-        } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
-          // Walk children snapshot to avoid live NodeList issues
-          var children = Array.prototype.slice.call(node.childNodes);
-          for (var i = 0; i < children.length; i++) replaceInNode(children[i]);
-        }
-        return false;
-      }
-
-      // Run replacement on each container
-      var replacedAny = false;
-      containers.forEach(function(container) {
-        try {
-          var r = replaceInNode(container);
-          if (r) replacedAny = true;
-        } catch (e) {
-          console.error('Bideshi inline media: error replacing in container', e, container);
-        }
-      });
-
-      if (replacedAny) {
-        console.info('Bideshi inline media: token replacement performed.');
-        var fallback = document.querySelector('.article-media-fallback');
-        if (fallback) fallback.style.display = 'none';
-      } else {
-        console.info('Bideshi inline media: no token occurrences found in selected containers.');
-      }
-
-    }); // onReady
-  })();
-</script>
-{%- comment -%} End of Bideshi Custom Multimedia Layer {%- endcomment -%}
+{% comment %}
+  ==============================================================
+  END INLINE MEDIA INJECTION LOGIC
+  ==============================================================
+{% endcomment %}
 
 
     
