@@ -23,9 +23,7 @@
     {%- if article.image -%}
       {%- content_for 'block', id: 'blog-post-image', type: '_blog-post-featured-image', image: article.image %}
     {%- endif -%}
-   <div class="article-content rte">
-      {{ processed_content }}
-    </div>
+   {%- content_for 'block', id: 'blog-post-content', type: '_blog-post-content' %}
 
 <!-- ============================= -->
 <!-- Bideshi Custom Multimedia Layer -->
@@ -169,11 +167,8 @@
       assign marker_index = forloop.index
       assign marker = '[EXT_' | append: marker_index | append: ']'
       
-      # Use your existing URL manipulation logic
-      assign embed_link = link
-        | replace: "watch?v=", "embed/"
-        | replace: "youtu.be/", "youtube.com/embed/"
-        | replace: "&list", "?list"
+      # FIX: Ensure all filters for embed_link are on a single line for multi-line liquid block
+      assign embed_link = link | replace: "watch?v=", "embed/" | replace: "youtu.be/", "youtube.com/embed/" | replace: "&list", "?list"
         
       # Build the iframe HTML, wrapped in the responsive container
       capture media_html
