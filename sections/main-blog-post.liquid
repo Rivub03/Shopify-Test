@@ -25,196 +25,34 @@
     {%- endif -%}
    {%- content_for 'block', id: 'blog-post-content', type: '_blog-post-content' %}
 
-<!-- ============================= -->
-<!-- Bideshi Custom Multimedia Layer -->
-<!-- ============================= -->
+<!-- ===== Bideshi: Custom Multimedia Layers (metafields + shortcodes) ===== -->
+<div class="bideshi-article-media">
 
-<style>
-  /*     Bideshi Custom Multimedia Layer CSS (UPDATED FOR INLINE/RESPONSIVE) 
-  */
-  
-  /* 1. Generic Media Figure Styling */
-  .article-content figure {
-    margin: 2.5rem auto; /* Vertical space for media blocks */
-    max-width: 100%;
-  }
-  
-  .article-content figcaption {
-    font-style: italic;
-    font-size: 0.875rem;
-    color: rgba(0,0,0,0.6);
-    margin-top: 0.8rem;
-    text-align: left; /* Captions align to the left */
-    padding: 0 10px;
-  }
-  
-  /* 2. Fluid Images and Audio */
-  .article-content img,
-  .article-content video,
-  .article-content audio {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    border-radius: 1rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  }
-  
-  /* Audio player can't use box-shadow well, so we remove it. */
-  .article-content audio {
-    box-shadow: none;
-    margin: 1.5rem auto;
-  }
+  {%- comment -%} 1) Structured (optional) per-article metafields {%- endcomment -%}
+  {%- if article.metafields.media.image -%}
+    <figure class="bideshi-inline-image">
+      <img src="{{ article.metafields.media.image | img_url: 'master' }}" alt="{{ article.title }}" class="article-image">
+    </figure>
+  {%- endif -%}
 
-  /* 3. The Responsive Aspect Ratio Hack (CRITICAL for videos/iframes) */
-  .video-container-wrapper {
-    position: relative; 
-    width: 100%;
-    height: 0;
-    /* Forces a 16:9 aspect ratio regardless of container width */
-    padding-bottom: 56.25%; 
-    margin-bottom: 0.5em; 
-  }
+  {%- if article.metafields.media.audio -%}
+    <div class="bideshi-inline-audio">
+      <audio controls class="article-audio">
+        <source src="{{ article.metafields.media.audio }}" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+    </div>
+  {%- endif -%}
 
-  /* Make the video/iframe fill the wrapper */
-  .video-container-wrapper iframe,
-  .video-container-wrapper video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-    border-radius: 1rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  }
-</style>
-{% comment %}
-  ==============================================================
-  INLINE MEDIA INJECTION LOGIC
-  - This block processes all metafield media and replaces the markers
-  - The processed content is stored in the 'processed_content' variable
-  ==============================================================
-{% endcomment %}
+  {%- if article.metafields.media.video -%}
+    <div class="article-video">
+      <iframe src="{{ article.metafields.media.video }}" frameborder="0" allowfullscreen></iframe>
+    </div>
+  {%- endif -%}
 
-{% liquid 
-  assign processed_content = article.content
-  assign marker_index = 0
-  assign media_html = ''
-%}
-
-{% comment %}
-  -------------------------------------------------------------
-  1. Process Images: Marker Format [IMG_1], [IMG_2], etc.
-  -------------------------------------------------------------
-{% endcomment %}
-{%- assign media_images = article.metafields.custom.media_image.value -%}
-{%- if media_images -%}
-  {%- for image in media_images -%}
-    {%- liquid
-      assign marker_index = forloop.index
-      assign marker = '[IMG_' | append: marker_index | append: ']'
-      
-      # Build the image HTML with figure tag
-      capture media_html
-        echo '<figure>'
-        echo image | image_url: width: 1200 | image_tag: loading: 'lazy', alt: article.title
-        echo '</figure>'
-      endcapture
-      
-      # Inject the HTML into the content
-      assign processed_content = processed_content | replace: marker, media_html
-    -%}
-  {%- endfor -%}
-{%- endif -%}
-
-{% comment %}
-  -------------------------------------------------------------
-  2. Process Uploaded Videos: Marker Format [VID_1], [VID_2], etc.
-  -------------------------------------------------------------
-{% endcomment %}
-{%- assign media_videos = article.metafields.custom.media_video.value -%}
-{%- if media_videos -%}
-  {%- for video in media_videos -%}
-    {%- liquid
-      assign marker_index = forloop.index
-      assign marker = '[VID_' | append: marker_index | append: ']'
-      
-      # Build the uploaded video HTML, wrapped in the responsive container
-      capture media_html
-        echo '<figure>'
-        echo '<div class="video-container-wrapper">'
-        echo video | video_tag: controls: 'controls', preload: "metadata"
-        echo '</div>'
-        echo '</figure>'
-      endcapture
-      
-      # Inject the HTML into the content
-      assign processed_content = processed_content | replace: marker, media_html
-    -%}
-  {%- endfor -%}
-{%- endif -%}
-
-{% comment %}
-  -------------------------------------------------------------
-  3. Process External Videos: Marker Format [EXT_1], [EXT_2], etc.
-  -------------------------------------------------------------
-{% endcomment %}
-{%- assign media_video_links = article.metafields.custom.media_video_link.value -%}
-{%- if media_video_links -%}
-  {%- for link in media_video_links -%}
-    {%- liquid
-      assign marker_index = forloop.index
-      assign marker = '[EXT_' | append: marker_index | append: ']'
-      
-      # FIX: Ensure all filters for embed_link are on a single line for multi-line liquid block
-      assign embed_link = link | replace: "watch?v=", "embed/" | replace: "youtu.be/", "youtube.com/embed/" | replace: "&list", "?list"
-        
-      # Build the iframe HTML, wrapped in the responsive container
-      capture media_html
-        echo '<figure>'
-        echo '<div class="video-container-wrapper">'
-        echo '<iframe src="' | append: embed_link | append: '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
-        echo '</div>'
-        echo '</figure>'
-      endcapture
-      
-      # Inject the HTML into the content
-      assign processed_content = processed_content | replace: marker, media_html
-    -%}
-  {%- endfor -%}
-{%- endif -%}
-
-{% comment %}
-  -------------------------------------------------------------
-  4. Process Audio Files: Marker Format [AUD_1], [AUD_2], etc.
-  -------------------------------------------------------------
-{% endcomment %}
-{%- assign media_audios = article.metafields.custom.media_audio.value -%}
-{%- if media_audios -%}
-  {%- for audio in media_audios -%}
-    {%- liquid
-      assign marker_index = forloop.index
-      assign marker = '[AUD_' | append: marker_index | append: ']'
-      
-      # Build the audio HTML
-      capture media_html
-        echo '<figure>'
-        echo '<audio controls preload="none"><source src="' | append: audio.url | append: '" type="' | append: audio.mime_type | default: 'audio/mpeg' | append: '">Your browser does not support the audio element.</audio>'
-        echo '</figure>'
-      endcapture
-      
-      # Inject the HTML into the content
-      assign processed_content = processed_content | replace: marker, media_html
-    -%}
-  {%- endfor -%}
-{%- endif -%}
-
-{% comment %}
-  ==============================================================
-  END INLINE MEDIA INJECTION LOGIC
-  ==============================================================
-{% endcomment %}
+  {%- comment -%} 2) Inline shortcodes will be converted client-side by shortcode JS targeting .blog-post-content {%- endcomment -%}
+</div>
+<!-- ===== end multimedia layers ===== -->
 
 
     
