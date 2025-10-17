@@ -28,7 +28,7 @@
 <!-- ===== Bideshi: Enhanced Multimedia Layer (using custom.* metafields + shortcode bindings) ===== -->
 <div
   class="bideshi-article-media"
-  data-image0="{{ article.metafields.custom.media_image | image_url: 'master' }}"
+  data-image0="{{ article.metafields.custom.media_image | file_url: 'master' }}"
   data-audio0="{{ article.metafields.custom.media_audio | file_url }}"
   data-video0="{{ article.metafields.custom.media_video | file_url }}"
   data-video_link0="{{ article.metafields.custom.media_video_link }}"
