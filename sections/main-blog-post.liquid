@@ -29,10 +29,11 @@
 <div
   class="bideshi-article-media"
   data-image0="{{ article.metafields.custom.media_image | image_url: 'master' }}"
-  data-audio0="{{ article.metafields.custom.media_audio }}"
-  data-video0="{{ article.metafields.custom.media_video }}"
+  data-audio0="{{ article.metafields.custom.media_audio | file_url }}"
+  data-video0="{{ article.metafields.custom.media_video | file_url }}"
   data-video_link0="{{ article.metafields.custom.media_video_link }}"
 >
+
   {%- comment -%}
     This element exposes metafield URLs as data attributes for the shortcode parser.
     Authors can write shortcodes like [image0], [audio0], [video0], [video_link0]
