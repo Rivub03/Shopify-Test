@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+  console.log("shortcode-media test");
   const articleBody = document.querySelector('.blog-post-content .rte-formatter') || document.querySelector('.blog-post-content');
   const mediaData = document.querySelector('.bideshi-article-media');
   if (!articleBody || !mediaData) return;
