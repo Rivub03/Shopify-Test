@@ -25,37 +25,60 @@
     {%- endif -%}
    {%- content_for 'block', id: 'blog-post-content', type: '_blog-post-content' %}
 
-<!-- ===== Bideshi: Custom Multimedia Layers (metafields + shortcodes) ===== -->
-<div class="bideshi-article-media">
+<!-- ===== Bideshi: Enhanced Multimedia Layer (using custom.* metafields + shortcode bindings) ===== -->
+<div
+  class="bideshi-article-media"
+  data-image0="{{ article.metafields.custom.media_image | image_url: 'master' }}"
+  data-audio0="{{ article.metafields.custom.media_audio }}"
+  data-video0="{{ article.metafields.custom.media_video }}"
+  data-video_link0="{{ article.metafields.custom.media_video_link }}"
+>
+  {%- comment -%}
+    This element exposes metafield URLs as data attributes for the shortcode parser.
+    Authors can write shortcodes like [image0], [audio0], [video0], [video_link0]
+    directly in the article body.
+  {%- endcomment -%}
 
-  {%- comment -%} 1) Structured (optional) per-article metafields {%- endcomment -%}
-  {%- if article.metafields.media.image -%}
+  {%- if article.metafields.custom.media_image -%}
     <figure class="bideshi-inline-image">
-      <img src="{{ article.metafields.media.image | img_url: 'master' }}" alt="{{ article.title }}" class="article-image">
+      <img
+        src="{{ article.metafields.custom.media_image | image_url: 'master' }}"
+        alt="{{ article.title }}"
+        class="article-image"
+      >
     </figure>
   {%- endif -%}
 
-  {%- if article.metafields.media.audio -%}
+  {%- if article.metafields.custom.media_audio -%}
     <div class="bideshi-inline-audio">
       <audio controls class="article-audio">
-        <source src="{{ article.metafields.media.audio }}" type="audio/mpeg">
+        <source src="{{ article.metafields.custom.media_audio }}" type="audio/mpeg">
         Your browser does not support the audio element.
       </audio>
     </div>
   {%- endif -%}
 
-  {%- if article.metafields.media.video -%}
+  {%- if article.metafields.custom.media_video -%}
     <div class="article-video">
-      <iframe src="{{ article.metafields.media.video }}" frameborder="0" allowfullscreen></iframe>
+      <video controls class="article-video-player">
+        <source src="{{ article.metafields.custom.media_video }}" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
     </div>
   {%- endif -%}
 
-  {%- comment -%} 2) Inline shortcodes will be converted client-side by shortcode JS targeting .blog-post-content {%- endcomment -%}
+  {%- if article.metafields.custom.media_video_link -%}
+    <div class="article-video">
+      <iframe
+        src="{{ article.metafields.custom.media_video_link }}"
+        frameborder="0"
+        allowfullscreen
+      ></iframe>
+    </div>
+  {%- endif -%}
 </div>
 <!-- ===== end multimedia layers ===== -->
 
-
-    
     {% if blog.comments_enabled? %}
       <div class="blog-post-comments-container">
         <h2 class="h3">{{- 'blogs.article.comments_heading' | t: count: article.comments_count -}}</h2>
