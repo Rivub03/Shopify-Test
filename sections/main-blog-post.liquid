@@ -28,11 +28,12 @@
 <!-- ===== Bideshi: Enhanced Multimedia Layer (using custom.* metafields + shortcode bindings) ===== -->
 <div
   class="bideshi-article-media"
-  data-image0="{{ article.metafields.custom.media_image[0] | file_url }}"
-  data-audio0="{{ article.metafields.custom.media_audio[0] | file_url }}"
-  data-video0="{{ article.metafields.custom.media_video[0] | file_url }}"
+  data-image0="{{ article.metafields.custom.media_image.first | file_url }}"
+  data-audio0="{{ article.metafields.custom.media_audio.first | file_url }}"
+  data-video0="{{ article.metafields.custom.media_video.first | file_url }}"
   data-video_link0="{{ article.metafields.custom.media_video_link }}"
 >
+
 
 
   {%- comment -%}
