@@ -25,6 +25,7 @@
     {%- endif -%}
    {%- content_for 'block', id: 'blog-post-content', type: '_blog-post-content' %}
 
+
 <!-- ===== Bideshi: Enhanced Multimedia Layer (using custom.* metafields + shortcode bindings) ===== -->
 <div class="bideshi-article-media"
   {% comment %}
@@ -64,53 +65,6 @@
     {% endfor %}
   {% endif %}
 >
-</div>
-
-
-
-  {%- comment -%}
-    This element exposes metafield URLs as data attributes for the shortcode parser.
-    Authors can write shortcodes like [image0], [audio0], [video0], [video_link0]
-    directly in the article body.
-  {%- endcomment -%}
-
-  {%- if article.metafields.custom.media_image -%}
-    <figure class="bideshi-inline-image">
-      <img
-        src="{{ article.metafields.custom.media_image | image_url: 'master' }}"
-        alt="{{ article.title }}"
-        class="article-image"
-      >
-    </figure>
-  {%- endif -%}
-
-  {%- if article.metafields.custom.media_audio -%}
-    <div class="bideshi-inline-audio">
-      <audio controls class="article-audio">
-        <source src="{{ article.metafields.custom.media_audio }}" type="audio/mpeg">
-        Your browser does not support the audio element.
-      </audio>
-    </div>
-  {%- endif -%}
-
-  {%- if article.metafields.custom.media_video -%}
-    <div class="article-video">
-      <video controls class="article-video-player">
-        <source src="{{ article.metafields.custom.media_video }}" type="video/mp4">
-        Your browser does not support the video tag.
-      </video>
-    </div>
-  {%- endif -%}
-
-  {%- if article.metafields.custom.media_video_link -%}
-    <div class="article-video">
-      <iframe
-        src="{{ article.metafields.custom.media_video_link }}"
-        frameborder="0"
-        allowfullscreen
-      ></iframe>
-    </div>
-  {%- endif -%}
 </div>
 <!-- ===== end multimedia layers ===== -->
 
