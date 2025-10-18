@@ -28,11 +28,12 @@
 <!-- ===== Bideshi: Enhanced Multimedia Layer (using custom.* metafields + shortcode bindings) ===== -->
 <div
   class="bideshi-article-media"
-  data-image0="{{ article.metafields.custom.media_image.first | file_url }}"
-  data-audio0="{{ article.metafields.custom.media_audio | file_url }}"
-  data-video0="{{ article.metafields.custom.media_video | file_url }}"
+  data-image0="{{ article.metafields.custom.media_image.value[0].url }}"
+  data-audio0="{{ article.metafields.custom.media_audio.value[0].url }}"
+  data-video0="{{ article.metafields.custom.media_video.value[0].url }}"
   data-video_link0="{{ article.metafields.custom.media_video_link }}"
 >
+
 
   {%- comment -%}
     This element exposes metafield URLs as data attributes for the shortcode parser.
