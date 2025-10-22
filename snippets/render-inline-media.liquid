@@ -37,9 +37,17 @@
       {%- for part in parts offset: 1 -%}
         {%- comment -%} Extract the full shortcode and any caption {%- endcomment -%}
         {%- assign caption = '' -%}
-        {%- assign closing_bracket_pos = part | split: ']' | first | size -%}
-        {%- assign shortcode_content = part | slice: 0, closing_bracket_pos -%}
-        {%- assign after_shortcode = part | slice: closing_bracket_pos -%}
+        {%- assign rest_parts = part | split: ']' -%}
+        {%- assign shortcode_content = rest_parts[0] -%}
+        
+        {%- comment -%} Reconstruct everything after the closing bracket {%- endcomment -%}
+        {%- assign after_shortcode = '' -%}
+        {%- for rest_part in rest_parts offset: 1 -%}
+          {%- if forloop.first == false -%}
+            {%- assign after_shortcode = after_shortcode | append: ']' -%}
+          {%- endif -%}
+          {%- assign after_shortcode = after_shortcode | append: rest_part -%}
+        {%- endfor -%}
         
         {%- comment -%} Check if this shortcode has a caption {%- endcomment -%}
         {%- if shortcode_content contains 'caption="' -%}
@@ -92,9 +100,16 @@
       
       {%- for part in parts offset: 1 -%}
         {%- assign caption = '' -%}
-        {%- assign closing_bracket_pos = part | split: ']' | first | size -%}
-        {%- assign shortcode_content = part | slice: 0, closing_bracket_pos -%}
-        {%- assign after_shortcode = part | slice: closing_bracket_pos -%}
+        {%- assign rest_parts = part | split: ']' -%}
+        {%- assign shortcode_content = rest_parts[0] -%}
+        
+        {%- assign after_shortcode = '' -%}
+        {%- for rest_part in rest_parts offset: 1 -%}
+          {%- if forloop.first == false -%}
+            {%- assign after_shortcode = after_shortcode | append: ']' -%}
+          {%- endif -%}
+          {%- assign after_shortcode = after_shortcode | append: rest_part -%}
+        {%- endfor -%}
         
         {%- if shortcode_content contains 'caption="' -%}
           {%- assign caption_parts = shortcode_content | split: 'caption="' -%}
@@ -136,9 +151,16 @@
       
       {%- for part in parts offset: 1 -%}
         {%- assign caption = '' -%}
-        {%- assign closing_bracket_pos = part | split: ']' | first | size -%}
-        {%- assign shortcode_content = part | slice: 0, closing_bracket_pos -%}
-        {%- assign after_shortcode = part | slice: closing_bracket_pos -%}
+        {%- assign rest_parts = part | split: ']' -%}
+        {%- assign shortcode_content = rest_parts[0] -%}
+        
+        {%- assign after_shortcode = '' -%}
+        {%- for rest_part in rest_parts offset: 1 -%}
+          {%- if forloop.first == false -%}
+            {%- assign after_shortcode = after_shortcode | append: ']' -%}
+          {%- endif -%}
+          {%- assign after_shortcode = after_shortcode | append: rest_part -%}
+        {%- endfor -%}
         
         {%- if shortcode_content contains 'caption="' -%}
           {%- assign caption_parts = shortcode_content | split: 'caption="' -%}
@@ -177,9 +199,16 @@
       
       {%- for part in parts offset: 1 -%}
         {%- assign caption = '' -%}
-        {%- assign closing_bracket_pos = part | split: ']' | first | size -%}
-        {%- assign shortcode_content = part | slice: 0, closing_bracket_pos -%}
-        {%- assign after_shortcode = part | slice: closing_bracket_pos -%}
+        {%- assign rest_parts = part | split: ']' -%}
+        {%- assign shortcode_content = rest_parts[0] -%}
+        
+        {%- assign after_shortcode = '' -%}
+        {%- for rest_part in rest_parts offset: 1 -%}
+          {%- if forloop.first == false -%}
+            {%- assign after_shortcode = after_shortcode | append: ']' -%}
+          {%- endif -%}
+          {%- assign after_shortcode = after_shortcode | append: rest_part -%}
+        {%- endfor -%}
         
         {%- if shortcode_content contains 'caption="' -%}
           {%- assign caption_parts = shortcode_content | split: 'caption="' -%}
