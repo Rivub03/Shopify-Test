@@ -1,6 +1,12 @@
 {%- comment -%}
   Renders inline media based on shortcodes in article content
   Usage: {% render 'render-inline-media', content: article.content, article: article %}
+  
+  Supported shortcodes:
+  - [media-image-1] or [media-image-1 caption="Your caption here"]
+  - [media-audio-1] or [media-audio-1 caption="Your caption here"]
+  - [media-video-1] or [media-video-1 caption="Your caption here"]
+  - [media-link-1] or [media-link-1 caption="Your caption here"]
 {%- endcomment -%}
 
 {%- liquid
@@ -19,29 +25,64 @@
   {%- for image in media_images -%}
     {%- liquid
       assign index = forloop.index
-      assign shortcode = '[media-image-' | append: index | append: ']'
+      assign shortcode_base = '[media-image-' | append: index
     -%}
     
-    {%- capture image_html -%}
-      <figure class="inline-media inline-media--image">
-        <img
-          src="{{ image | image_url: width: 1200 }}"
-          srcset="
-            {{ image | image_url: width: 400 }} 400w,
-            {{ image | image_url: width: 800 }} 800w,
-            {{ image | image_url: width: 1200 }} 1200w,
-            {{ image | image_url: width: 1600 }} 1600w
-          "
-          sizes="(min-width: 750px) calc(100vw - 10rem), calc(100vw - 3rem)"
-          alt="{{ image.alt | default: article.title }}"
-          loading="lazy"
-          width="{{ image.width }}"
-          height="{{ image.height }}"
-        >
-      </figure>
-    {%- endcapture -%}
-    
-    {%- assign processed_content = processed_content | replace: shortcode, image_html -%}
+    {%- comment -%} Find all instances of this shortcode (with or without caption) {%- endcomment -%}
+    {%- assign parts = processed_content | split: shortcode_base -%}
+    {%- if parts.size > 1 -%}
+      {%- comment -%} There's at least one instance of this shortcode {%- endcomment -%}
+      {%- assign new_content = parts[0] -%}
+      
+      {%- for part in parts offset: 1 -%}
+        {%- comment -%} Extract the full shortcode and any caption {%- endcomment -%}
+        {%- assign caption = '' -%}
+        {%- assign rest_parts = part | split: ']' -%}
+        {%- assign shortcode_content = rest_parts[0] -%}
+        
+        {%- comment -%} Reconstruct everything after the closing bracket {%- endcomment -%}
+        {%- assign after_shortcode = '' -%}
+        {%- for rest_part in rest_parts offset: 1 -%}
+          {%- if forloop.first == false -%}
+            {%- assign after_shortcode = after_shortcode | append: ']' -%}
+          {%- endif -%}
+          {%- assign after_shortcode = after_shortcode | append: rest_part -%}
+        {%- endfor -%}
+        
+        {%- comment -%} Check if this shortcode has a caption {%- endcomment -%}
+        {%- if shortcode_content contains 'caption="' -%}
+          {%- assign caption_parts = shortcode_content | split: 'caption="' -%}
+          {%- assign caption_with_rest = caption_parts[1] -%}
+          {%- assign caption = caption_with_rest | split: '"' | first -%}
+        {%- endif -%}
+        
+        {%- capture image_html -%}
+          <figure class="inline-media inline-media--image">
+            <img
+              src="{{ image | image_url: width: 1200 }}"
+              srcset="
+                {{ image | image_url: width: 400 }} 400w,
+                {{ image | image_url: width: 800 }} 800w,
+                {{ image | image_url: width: 1200 }} 1200w,
+                {{ image | image_url: width: 1600 }} 1600w
+              "
+              sizes="(min-width: 750px) calc(100vw - 10rem), calc(100vw - 3rem)"
+              alt="{{ caption | default: image.alt | default: article.title }}"
+              loading="lazy"
+              width="{{ image.width }}"
+              height="{{ image.height }}"
+            >
+            {%- if caption != blank -%}
+              <figcaption>{{ caption }}</figcaption>
+            {%- endif -%}
+          </figure>
+        {%- endcapture -%}
+        
+        {%- assign new_content = new_content | append: image_html | append: after_shortcode -%}
+      {%- endfor -%}
+      
+      {%- assign processed_content = new_content -%}
+    {%- endif -%}
   {%- endfor -%}
 {%- endif -%}
 
@@ -50,19 +91,49 @@
   {%- for audio in media_audios -%}
     {%- liquid
       assign index = forloop.index
-      assign shortcode = '[media-audio-' | append: index | append: ']'
+      assign shortcode_base = '[media-audio-' | append: index
     -%}
     
-    {%- capture audio_html -%}
-      <figure class="inline-media inline-media--audio">
-        <audio controls preload="metadata">
-          <source src="{{ audio.url }}" type="{{ audio.mime_type | default: 'audio/mpeg' }}">
-          Your browser does not support the audio element.
-        </audio>
-      </figure>
-    {%- endcapture -%}
-    
-    {%- assign processed_content = processed_content | replace: shortcode, audio_html -%}
+    {%- assign parts = processed_content | split: shortcode_base -%}
+    {%- if parts.size > 1 -%}
+      {%- assign new_content = parts[0] -%}
+      
+      {%- for part in parts offset: 1 -%}
+        {%- assign caption = '' -%}
+        {%- assign rest_parts = part | split: ']' -%}
+        {%- assign shortcode_content = rest_parts[0] -%}
+        
+        {%- assign after_shortcode = '' -%}
+        {%- for rest_part in rest_parts offset: 1 -%}
+          {%- if forloop.first == false -%}
+            {%- assign after_shortcode = after_shortcode | append: ']' -%}
+          {%- endif -%}
+          {%- assign after_shortcode = after_shortcode | append: rest_part -%}
+        {%- endfor -%}
+        
+        {%- if shortcode_content contains 'caption="' -%}
+          {%- assign caption_parts = shortcode_content | split: 'caption="' -%}
+          {%- assign caption_with_rest = caption_parts[1] -%}
+          {%- assign caption = caption_with_rest | split: '"' | first -%}
+        {%- endif -%}
+        
+        {%- capture audio_html -%}
+          <figure class="inline-media inline-media--audio">
+            <audio controls preload="metadata">
+              <source src="{{ audio.url }}" type="{{ audio.mime_type | default: 'audio/mpeg' }}">
+              Your browser does not support the audio element.
+            </audio>
+            {%- if caption != blank -%}
+              <figcaption>{{ caption }}</figcaption>
+            {%- endif -%}
+          </figure>
+        {%- endcapture -%}
+        
+        {%- assign new_content = new_content | append: audio_html | append: after_shortcode -%}
+      {%- endfor -%}
+      
+      {%- assign processed_content = new_content -%}
+    {%- endif -%}
   {%- endfor -%}
 {%- endif -%}
 
@@ -71,43 +142,142 @@
   {%- for video in media_videos -%}
     {%- liquid
       assign index = forloop.index
-      assign shortcode = '[media-video-' | append: index | append: ']'
+      assign shortcode_base = '[media-video-' | append: index
     -%}
     
-    {%- capture video_html -%}
-      <figure class="inline-media inline-media--video">
-        {{ video | video_tag: controls: true, preload: "metadata" }}
-      </figure>
-    {%- endcapture -%}
-    
-    {%- assign processed_content = processed_content | replace: shortcode, video_html -%}
+    {%- assign parts = processed_content | split: shortcode_base -%}
+    {%- if parts.size > 1 -%}
+      {%- assign new_content = parts[0] -%}
+      
+      {%- for part in parts offset: 1 -%}
+        {%- assign caption = '' -%}
+        {%- assign rest_parts = part | split: ']' -%}
+        {%- assign shortcode_content = rest_parts[0] -%}
+        
+        {%- assign after_shortcode = '' -%}
+        {%- for rest_part in rest_parts offset: 1 -%}
+          {%- if forloop.first == false -%}
+            {%- assign after_shortcode = after_shortcode | append: ']' -%}
+          {%- endif -%}
+          {%- assign after_shortcode = after_shortcode | append: rest_part -%}
+        {%- endfor -%}
+        
+        {%- if shortcode_content contains 'caption="' -%}
+          {%- assign caption_parts = shortcode_content | split: 'caption="' -%}
+          {%- assign caption_with_rest = caption_parts[1] -%}
+          {%- assign caption = caption_with_rest | split: '"' | first -%}
+        {%- endif -%}
+        
+        {%- capture video_html -%}
+          <figure class="inline-media inline-media--video">
+            {{ video | video_tag: controls: true, preload: "metadata" }}
+            {%- if caption != blank -%}
+              <figcaption>{{ caption }}</figcaption>
+            {%- endif -%}
+          </figure>
+        {%- endcapture -%}
+        
+        {%- assign new_content = new_content | append: video_html | append: after_shortcode -%}
+      {%- endfor -%}
+      
+      {%- assign processed_content = new_content -%}
+    {%- endif -%}
   {%- endfor -%}
 {%- endif -%}
 
-{%- comment -%} Process Video Links (YouTube/Vimeo) {%- endcomment -%}
+{%- comment -%} Process Video Links (YouTube/Vimeo/Instagram/TikTok) {%- endcomment -%}
 {%- if media_video_links -%}
   {%- for link in media_video_links -%}
     {%- liquid
       assign index = forloop.index
-      assign shortcode = '[media-link-' | append: index | append: ']'
-      
-      # Convert YouTube/Vimeo URLs to embed format
-      assign embed_link = link | replace: 'watch?v=', 'embed/' | replace: 'youtu.be/', 'youtube.com/embed/' | replace: '&list', '?list'
+      assign shortcode_base = '[media-link-' | append: index
     -%}
     
-    {%- capture link_html -%}
-      <figure class="inline-media inline-media--embed">
-        <iframe
-          src="{{ embed_link }}"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen
-          loading="lazy"
-        ></iframe>
-      </figure>
-    {%- endcapture -%}
-    
-    {%- assign processed_content = processed_content | replace: shortcode, link_html -%}
+    {%- assign parts = processed_content | split: shortcode_base -%}
+    {%- if parts.size > 1 -%}
+      {%- assign new_content = parts[0] -%}
+      
+      {%- for part in parts offset: 1 -%}
+        {%- assign caption = '' -%}
+        {%- assign rest_parts = part | split: ']' -%}
+        {%- assign shortcode_content = rest_parts[0] -%}
+        
+        {%- assign after_shortcode = '' -%}
+        {%- for rest_part in rest_parts offset: 1 -%}
+          {%- if forloop.first == false -%}
+            {%- assign after_shortcode = after_shortcode | append: ']' -%}
+          {%- endif -%}
+          {%- assign after_shortcode = after_shortcode | append: rest_part -%}
+        {%- endfor -%}
+        
+        {%- if shortcode_content contains 'caption="' -%}
+          {%- assign caption_parts = shortcode_content | split: 'caption="' -%}
+          {%- assign caption_with_rest = caption_parts[1] -%}
+          {%- assign caption = caption_with_rest | split: '"' | first -%}
+        {%- endif -%}
+        
+        {%- comment -%} Determine platform and generate embed URL {%- endcomment -%}
+        {%- assign embed_link = '' -%}
+        {%- assign platform = 'unknown' -%}
+        {%- assign aspect_ratio = '16 / 9' -%}
+        
+        {%- if link contains 'youtube.com' or link contains 'youtu.be' -%}
+          {%- assign platform = 'youtube' -%}
+          {%- assign embed_link = link | replace: 'watch?v=', 'embed/' | replace: 'youtu.be/', 'youtube.com/embed/' | replace: '&list', '?list' -%}
+          {%- if link contains '/shorts/' -%}
+            {%- assign embed_link = link | replace: '/shorts/', '/embed/' -%}
+            {%- assign aspect_ratio = '9 / 16' -%}
+          {%- endif -%}
+        {%- elsif link contains 'instagram.com' -%}
+          {%- assign platform = 'instagram' -%}
+          {%- assign aspect_ratio = '9 / 16' -%}
+          {%- comment -%} Instagram Reels: Extract the post ID {%- endcomment -%}
+          {%- if link contains '/reel/' -%}
+            {%- assign reel_id = link | split: '/reel/' | last | split: '/' | first | split: '?' | first -%}
+            {%- assign embed_link = 'https://www.instagram.com/p/' | append: reel_id | append: '/embed' -%}
+          {%- elsif link contains '/p/' -%}
+            {%- assign post_id = link | split: '/p/' | last | split: '/' | first | split: '?' | first -%}
+            {%- assign embed_link = 'https://www.instagram.com/p/' | append: post_id | append: '/embed' -%}
+          {%- endif -%}
+        {%- elsif link contains 'tiktok.com' -%}
+          {%- assign platform = 'tiktok' -%}
+          {%- assign aspect_ratio = '9 / 16' -%}
+          {%- comment -%} TikTok: Extract video ID {%- endcomment -%}
+          {%- if link contains '/video/' -%}
+            {%- assign video_id = link | split: '/video/' | last | split: '?' | first -%}
+            {%- assign embed_link = 'https://www.tiktok.com/embed/v2/' | append: video_id -%}
+          {%- endif -%}
+        {%- elsif link contains 'vimeo.com' -%}
+          {%- assign platform = 'vimeo' -%}
+          {%- assign video_id = link | split: 'vimeo.com/' | last | split: '?' | first -%}
+          {%- assign embed_link = 'https://player.vimeo.com/video/' | append: video_id -%}
+        {%- else -%}
+          {%- assign embed_link = link -%}
+        {%- endif -%}
+        
+        {%- capture link_html -%}
+          <figure class="inline-media inline-media--embed inline-media--{{ platform }}">
+            <div class="inline-media__embed-container" style="aspect-ratio: {{ aspect_ratio }};">
+              <iframe
+                src="{{ embed_link }}"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+                loading="lazy"
+                {%- if platform == 'instagram' %} scrolling="no"{%- endif -%}
+              ></iframe>
+            </div>
+            {%- if caption != blank -%}
+              <figcaption>{{ caption }}</figcaption>
+            {%- endif -%}
+          </figure>
+        {%- endcapture -%}
+        
+        {%- assign new_content = new_content | append: link_html | append: after_shortcode -%}
+      {%- endfor -%}
+      
+      {%- assign processed_content = new_content -%}
+    {%- endif -%}
   {%- endfor -%}
 {%- endif -%}
 
